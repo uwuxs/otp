@@ -1,31 +1,29 @@
-<html>
+from flask import Flask, request, render_template
+import pyotp
 
-<head>
-    <title>OTP Generator</title>
-</head>
+app = Flask(__name__)
 
-<body>
-    <h1>OTP Generator</h1>
-    <button id="generate-otp">Generate OTP</button>
-    <p id="otp-value"></p>
+# Generate a new random secret key
+# The secret key should be shared between the user and the server
+secret_key = pyotp.random_base32()
 
-    <script>
-        const generateOtpButton = document.getElementById('generate-otp')
-        const optv = document.getElementById('otp-value')
 
-        generateOtpButton.addEventListener('click', () => {
-        x = prompt("What is the OTP code?")
-            fetch('./' + x)
-                .then(response => response.json())
-                //.then(data => console.log(data))
-                // pop up alert for data
-                .then(data => {
-                    alert(data.otp)
-                    optv.innerHTML = data.otp
-                })
-                .catch(error => console.error(error))
-        })
-    </script>
-</body>
+from flask import jsonify
 
-</html>
+
+@app.route('/generate/<secret_key>', methods=['POST','GET'])
+def generate_otp(secret_key):
+    # Generate a new OTP for the current time
+    totp = pyotp.TOTP(secret_key)
+    otp = totp.now()
+
+    # Return the OTP to the client as a JSON object
+    response = jsonify({'otp': otp})
+    response.headers['Access-Control-Allow-Origin'] = '*'
+
+    return response
+@app.route('/')
+def gen():
+    return render_template('index.html')
+if __name__ == '__main__':
+    app.run()
